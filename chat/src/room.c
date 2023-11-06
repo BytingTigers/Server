@@ -49,7 +49,10 @@ room_t **_get_rooms(redisContext *redis_context) {
 room_t *get_room(redisContext *redis_context, const char *id) {
 
     room_t **rooms = _get_rooms(redis_context);
-
+    if(rooms == NULL){
+        return NULL;
+    }
+    
     for (int i = 0; i < MAX_ROOMS_PER_SERVER && rooms[i] != NULL; i++) {
         room_t *cur = rooms[i];
         if (strcmp(cur->id, id) == 0) {
