@@ -1,4 +1,4 @@
-#include "chat.h"
+#include "room.h"
 #include <hiredis/hiredis.h>
 #include <hiredis/read.h>
 
