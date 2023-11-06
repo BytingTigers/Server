@@ -235,6 +235,10 @@ void *handle_client(void *arg) {
                 send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
             }
 
+            chat_history = get_messages(redis_context, room);
+            write(cli->sockfd, chat_history, strlen(chat_history));
+            free(chat_history);
+            
             snprintf(send_buffer, BUFF_LEN, cli->username);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
 
@@ -244,11 +248,6 @@ void *handle_client(void *arg) {
                      cli->username);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
             new_message(redis_context, room, send_buffer);
-
-            chat_history = get_messages(redis_context, room);
-            write(cli->sockfd, chat_history, strlen(chat_history));
-            free(chat_history);
-
             break;
 
         case LEAVE:
