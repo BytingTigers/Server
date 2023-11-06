@@ -68,7 +68,7 @@ room_t *create_room(redisContext *redis_context, const char *id,
 
     redisReply *reply = redisCommand(redis_context, "SADD rooms %s", id);
 
-    if (!reply or reply->integer == 0) {
+    if (!reply || reply->integer == 0) {
         return NULL;
     }
 
