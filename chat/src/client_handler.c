@@ -100,7 +100,7 @@ void *handle_client(void *arg) {
     // Username
     token = strtok_r(NULL, delim, &rest);
     if (token == NULL) {
-        send(cli->sockfd, error_msg, strlen(error_msg);
+        send(cli->sockfd, error_msg, strlen(error_msg), 0);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -114,7 +114,7 @@ void *handle_client(void *arg) {
     // JWT
     token = strtok_r(NULL, delim, &rest);
     if (token == NULL) {
-        send(cli->sockfd, error_msg, strlen(error_msg);
+        send(cli->sockfd, error_msg, strlen(error_msg), 0);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -127,7 +127,7 @@ void *handle_client(void *arg) {
     jwt_string[strcspn(jwt_string, "\n")] = '\0'; // remove last trail char
 
     if (verify_jwt(jwt_string, username) == 0) {
-        send(cli->sockfd, error_msg, strlen(error_msg);
+        send(cli->sockfd, error_msg, strlen(error_msg), 0);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
