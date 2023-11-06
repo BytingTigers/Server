@@ -312,7 +312,12 @@ void *handle_client(void *arg) {
                 return NULL;
             }
             strncpy(password, token, sizeof(password));
-            create_room(redis_context, room_id, password);
+            if(create_room(redis_context, room_id, password) == NULL){
+                send(cli->sockfd, "ERROR", strlen("ERROR"), 0);
+            }
+            else{
+                send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
+            }
             break;
 
         case QUIT:
