@@ -62,10 +62,10 @@ room_t *get_room(redisContext *redis_context, const char *id) {
 room_t *create_room(redisContext *redis_context, const char *id,
                     const char *password) {
 
-    if(get_room(redis_context, id) != NULL){
+    if(get_room(redis_context, strdup(id)) != NULL){
         return NULL;
     }
-    
+
     redisReply *reply = redisCommand(redis_context, "SADD rooms %s", id);
 
     if (!reply) {
