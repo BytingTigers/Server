@@ -142,7 +142,7 @@ void *handle_client(void *arg) {
         const char *jwt = signin(id, pw);
         pthread_mutex_unlock(&server->clients_mutex);
         if (jwt == NULL) {
-            send(cli->sockfd, "ERROR", 6, 0);
+            send(cli->sockfd, reply, sizeof(reply), NULL);
         } else {
             send(cli->sockfd, jwt, strlen(jwt) + 1, 0);
         }
