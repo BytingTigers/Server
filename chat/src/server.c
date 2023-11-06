@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "chat.h"
 #include "client_handler.h"
 
 #define MAX_CHATROOMS 100
