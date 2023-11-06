@@ -139,6 +139,8 @@ void *handle_client(void *arg) {
     strncpy(cli->username, username, MAX_USERNAME_LEN - 1);
     cli->username[MAX_USERNAME_LEN - 1] = '\0';
 
+    send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
+
     // ##################
     // # Message handle #
     // ##################
