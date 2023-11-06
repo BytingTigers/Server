@@ -12,8 +12,6 @@
 #include <unistd.h>
 
 #define CLIENT_TIMEOUT 30
-#define USERNAME_MAX_LEN 10
-#define PASSWORD_MAX_LEN 20
 #define MAX_CLIENTS 10
 #define BUFFER_SIZE 1024
 
@@ -92,8 +90,8 @@ void *handle_client(void *arg) {
     char *token;
     char *rest = buffer;
     int mode;
-    char id[USERNAME_MAX_LEN];
-    char pw[PASSWORD_MAX_LEN];
+    char id[30];
+    char pw[20];
     const char delim[] = ".";
 
     token = strtok_r(rest, delim, &rest);
@@ -106,8 +104,8 @@ void *handle_client(void *arg) {
 
     token = strtok_r(NULL, delim, &rest);
     if (token != NULL) {
-        strncpy(id, token, USERNAME_MAX_LEN - 1);
-        id[USERNAME_MAX_LEN - 1] = '\0';
+        strncpy(id, token, 30 - 1);
+        id[30 - 1] = '\0';
     } else {
         send(cli->sockfd, reply, sizeof(reply), NULL);
         goto close_conn;
@@ -115,8 +113,8 @@ void *handle_client(void *arg) {
 
     token = strtok_r(NULL, delim, &rest);
     if (token != NULL) {
-        strncpy(pw, token, PASSWORD_MAX_LEN - 1);
-        pw[PASSWORD_MAX_LEN - 1] = '\0';
+        strncpy(pw, token, 20 - 1);
+        pw[20 - 1] = '\0';
     } else {
         send(cli->sockfd, reply, sizeof(reply), NULL);
         goto close_conn;
