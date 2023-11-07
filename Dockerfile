@@ -108,6 +108,7 @@ RUN service mysql start && \
 FROM base-server
 
 EXPOSE 5000
+EXPOSE 5001
 
 COPY ./start.sh /start.sh
 RUN chmod +x /start.sh
