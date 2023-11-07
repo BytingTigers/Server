@@ -238,6 +238,8 @@ void *handle_client(void *arg) {
             chat_history = get_messages(redis_context, room);
             write(cli->sockfd, chat_history, strlen(chat_history));
             free(chat_history);
+
+            memset(send_buffer, 0, sizeof(send_buffer));
             
             snprintf(send_buffer, BUFF_LEN, cli->username);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
@@ -280,8 +282,8 @@ void *handle_client(void *arg) {
                 pthread_detach(pthread_self());
                 return NULL;
             }
-
-            snprintf(send_buffer, sizeof(send_buffer), "[%s] %s",
+            // TODO
+            snprintf(send_buffer, sizeof(send_buffer), "[%s] %s\n",
                      cli->username, token);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
             new_message(redis_context, room, send_buffer);
