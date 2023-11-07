@@ -281,7 +281,7 @@ void *handle_client(void *arg) {
                 return NULL;
             }
 
-            snprintf(send_buffer, sizeof(send_buffer), "[%s] %s\n",
+            snprintf(send_buffer, sizeof(send_buffer), "[%s] %s",
                      cli->username, token);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
             new_message(redis_context, room, send_buffer);
