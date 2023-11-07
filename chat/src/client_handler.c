@@ -333,6 +333,10 @@ void *handle_client(void *arg) {
             reply = redisCommand(redis_context, "SMEMBERS rooms");
             memset(send_buffer, 0, sizeof(send_buffer));
             int count = reply->elements;
+            if(count == 0){
+                send(cli->sockfd, "EMPTY", strlen("EMPTY"), 0);
+                break;
+            }
             int current_len = 0;
             for (int i = 0; i < count; i++) {
                 char *room_id = strdup(reply->element[i]->str);
