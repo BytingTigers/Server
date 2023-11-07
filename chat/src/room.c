@@ -198,8 +198,6 @@ char *get_messages(redisContext *redis_context, const room_t *room) {
         }
     }
 
-    res[count] = '\0';
-
     freeReplyObject(reply);
     return res;
 }
