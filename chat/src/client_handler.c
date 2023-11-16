@@ -71,14 +71,16 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-    sanitize(recv_buffer, strlen(recv_buffer));
+    if (!sanitize(recv_buffer, strlen(recv_buffer))) {
+        return NULL;
+    }
 
     // `auth`
     rest = recv_buffer;
     token = strtok_r(rest, delim, &rest);
     if (token == NULL) {
         send(cli->sockfd, error_msg, strlen(error_msg), 0);
-        
+
         close(cli->sockfd);
         remove_client(cli->uid, server);
         free(cli);
@@ -160,7 +162,9 @@ void *handle_client(void *arg) {
             return NULL;
         }
         recv_buffer[recv_len] = '\0';
-        sanitize(recv_buffer, strlen(recv_buffer));
+        if (!sanitize(recv_buffer, strlen(recv_buffer))) {
+            return NULL;
+        }
 
         rest = recv_buffer;
         token = strtok_r(rest, delim, &rest);
@@ -228,10 +232,10 @@ void *handle_client(void *arg) {
                 break;
             }
 
-            if(join_room(room, password, cli) == 0){
+            if (join_room(room, password, cli) == 0) {
                 send(cli->sockfd, "ERROR", strlen("ERROR"), 0);
                 break;
-            }else{
+            } else {
                 send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
             }
 
@@ -240,7 +244,7 @@ void *handle_client(void *arg) {
             free(chat_history);
 
             memset(send_buffer, 0, sizeof(send_buffer));
-            
+
             snprintf(send_buffer, BUFF_LEN, cli->username);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
 
@@ -315,10 +319,9 @@ void *handle_client(void *arg) {
                 return NULL;
             }
             strncpy(password, token, sizeof(password));
-            if(create_room(redis_context, room_id, password) == NULL){
+            if (create_room(redis_context, room_id, password) == NULL) {
                 send(cli->sockfd, "ERROR", strlen("ERROR"), 0);
-            }
-            else{
+            } else {
                 send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
             }
             break;
@@ -335,7 +338,7 @@ void *handle_client(void *arg) {
             reply = redisCommand(redis_context, "SMEMBERS rooms");
             memset(send_buffer, 0, sizeof(send_buffer));
             int count = reply->elements;
-            if(count == 0){
+            if (count == 0) {
                 send(cli->sockfd, "EMPTY", strlen("EMPTY"), 0);
                 break;
             }

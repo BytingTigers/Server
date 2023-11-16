@@ -119,6 +119,11 @@ int signup(const char *username, const char *password) {
     }
 
     char *username_s = sanitize_sql_input(username);
+    if (!username_s) {
+        fprintf(stderr, "Sanitization for username failed.\n");
+        mysql_close(conn);
+        return EXIT_FAILURE;
+    }
     snprintf(query, sizeof(query), "SELECT * FROM users WHERE username='%s'",
              username_s);
     free(username_s);
@@ -156,6 +161,11 @@ int signup(const char *username, const char *password) {
     char *hex_hash = hex_to_string(password_hash, HASH_LENGTH);
 
     username_s = sanitize_sql_input(username);
+    if (!username_s) {
+        fprintf(stderr, "Sanitization for username failed.\n");
+        mysql_close(conn);
+        return EXIT_FAILURE;
+    }
     char *hex_hash_s = sanitize_sql_input(hex_hash);
     char *hex_salt_s = sanitize_sql_input(hex_salt);
     snprintf(query, sizeof(query),
@@ -204,6 +214,11 @@ const char *signin(const char *id, const char *password) {
     }
 
     char *id_s = sanitize_sql_input(id);
+    if (!id_s) {
+        fprintf(stderr, "Sanitization for id failed.\n");
+        mysql_close(conn);
+        return EXIT_FAILURE;
+    }
     snprintf(query, sizeof(query), "SELECT salt FROM users WHERE username='%s'",
              id_s);
     free(id_s);
@@ -283,9 +298,9 @@ const char *signin(const char *id, const char *password) {
         mysql_close(conn);
         return jwt;
     }
-    if(reply->str != NULL){
+    if (reply->str != NULL) {
         jwt = reply->str;
-    }else{
+    } else {
         jwt = strdup(generate_jwt(id));
         reply = redisCommand(redis_context, "SETEX %s %d %s", id, 3600, jwt);
 
@@ -301,12 +316,12 @@ const char *signin(const char *id, const char *password) {
             freeReplyObject(reply);
         }
     }
-        redisFree(redis_context);
-        free(salt);
-        free(hash);
-        free(hash_string);
-        mysql_close(conn);
-        return jwt;
+    redisFree(redis_context);
+    free(salt);
+    free(hash);
+    free(hash_string);
+    mysql_close(conn);
+    return jwt;
 }
 
 char *generate_jwt(const char *username) {
@@ -357,7 +372,8 @@ int verify_jwt(const char *jwt_string, const char *username) {
     }
 
     const char *token_username = jwt_get_grant(jwt, "username");
-    if (!token_username || strncmp(token_username, username, MAX_USERNAME_LEN) != 0) {
+    if (!token_username ||
+        strncmp(token_username, username, MAX_USERNAME_LEN) != 0) {
         fprintf(stderr, "Username mismatch. \n");
         jwt_free(jwt);
         return 0;
