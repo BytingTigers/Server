@@ -264,7 +264,11 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        // prevent race condiiton
+        pthread_mutex_lock(&server.clients_mutex);
         client_count++;
+        pthread_mutex_unlock(&server.clients_mutex);
+
         sleep(1);
     }
 
