@@ -192,7 +192,7 @@ char *get_messages(redisContext *redis_context, const room_t *room) {
     for (int i = reply->elements - 1; i >= 0; i--) {
         const char *line = reply->element[i]->str;
         strncat(res, line, BUFF_LEN - (count + 1));
-        count += strlen(line);
+        count = strlen(res);
         if (count >= BUFF_LEN - 1) {
             break;
         }
