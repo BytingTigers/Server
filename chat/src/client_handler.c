@@ -1,5 +1,6 @@
 #include "client_handler.h"
 #include "room.h"
+#include "ssl.h"
 #include <hiredis/hiredis.h>
 #include <unistd.h>
 
@@ -31,7 +32,7 @@ static char *sanitize(const char *str, size_t len) {
 }
 
 void *handle_client(void *arg) {
-    char recv_buffer[BUFF_LEN], send_buffer[BUFF_LEN];
+    unsigned char recv_buffer[BUFF_LEN], send_buffer[BUFF_LEN];
     int leave_flag = 0;
     int recv_len;
 
@@ -45,7 +46,10 @@ void *handle_client(void *arg) {
 
     char *chat_history;
 
-    const char error_msg[] = "ERROR_QUIT";
+    const unsigned char empty_msg[] = "EMPTY";
+    const unsigned char soft_error_msg[] = "ERROR";
+    const unsigned char error_msg[] = "ERROR_QUIT";
+    const unsigned char success_msg[] = "SUCCESS";
     redisReply *reply;
 
     thread_args_t *args = (thread_args_t *)arg;
@@ -60,8 +64,8 @@ void *handle_client(void *arg) {
     // ######################
     // # Token verification #
     // ######################
-    recv_len = recv(cli->sockfd, recv_buffer, sizeof(recv_buffer), 0);
-    if (recv_len <= 0) {
+    ssl_recv(recv_buffer, cli->sockfd);
+    if (recv_buffer == NULL) {
         close(cli->sockfd);
         remove_client(cli->uid, server);
         free(cli);
@@ -79,7 +83,7 @@ void *handle_client(void *arg) {
     rest = recv_buffer;
     token = strtok_r(rest, delim, &rest);
     if (token == NULL) {
-        send(cli->sockfd, error_msg, strlen(error_msg), 0);
+        ssl_send(error_msg, cli->sockfd);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -90,7 +94,8 @@ void *handle_client(void *arg) {
     }
 
     if (strncmp(token, "auth", strlen(token)) != 0) {
-        send(cli->sockfd, error_msg, strlen(error_msg), 0);
+        ssl_send(error_msg, cli->sockfd);
+
         close(cli->sockfd);
         remove_client(cli->uid, server);
         free(cli);
@@ -102,7 +107,7 @@ void *handle_client(void *arg) {
     // Username
     token = strtok_r(NULL, delim, &rest);
     if (token == NULL) {
-        send(cli->sockfd, error_msg, strlen(error_msg), 0);
+        ssl_send(error_msg, cli->sockfd);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -116,7 +121,7 @@ void *handle_client(void *arg) {
     // JWT
     token = strtok_r(NULL, delim, &rest);
     if (token == NULL) {
-        send(cli->sockfd, error_msg, strlen(error_msg), 0);
+        ssl_send(error_msg, cli->sockfd);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -129,7 +134,7 @@ void *handle_client(void *arg) {
     jwt_string[strcspn(jwt_string, "\n")] = '\0'; // remove last trail char
 
     if (verify_jwt(jwt_string, username) == 0) {
-        send(cli->sockfd, error_msg, strlen(error_msg), 0);
+        ssl_send(error_msg, cli->sockfd);
 
         close(cli->sockfd);
         remove_client(cli->uid, server);
@@ -141,7 +146,7 @@ void *handle_client(void *arg) {
     strncpy(cli->username, username, MAX_USERNAME_LEN - 1);
     cli->username[MAX_USERNAME_LEN - 1] = '\0';
 
-    send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
+    ssl_send(success_msg, cli->sockfd);
 
     // ##################
     // # Message handle #
@@ -150,9 +155,9 @@ void *handle_client(void *arg) {
     while (1) {
 
         // set username sent via socket
-        recv_len = recv(cli->sockfd, recv_buffer, sizeof(recv_buffer), 0);
+        ssl_recv(recv_buffer, cli->sockfd);
 
-        if (recv_len <= 0) {
+        if (recv_buffer == NULL) {
             close(cli->sockfd);
             remove_client(cli->uid, server);
             free(cli);
@@ -161,7 +166,6 @@ void *handle_client(void *arg) {
 
             return NULL;
         }
-        recv_buffer[recv_len] = '\0';
         if (!sanitize(recv_buffer, strlen(recv_buffer))) {
             return NULL;
         }
@@ -169,7 +173,8 @@ void *handle_client(void *arg) {
         rest = recv_buffer;
         token = strtok_r(rest, delim, &rest);
         if (token == NULL) {
-            send(cli->sockfd, error_msg, strlen(error_msg), 0);
+            ssl_send(error_msg, cli->sockfd);
+
             close(cli->sockfd);
             remove_client(cli->uid, server);
             free(cli);
@@ -198,7 +203,7 @@ void *handle_client(void *arg) {
         case JOIN:
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -211,7 +216,7 @@ void *handle_client(void *arg) {
 
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -233,14 +238,14 @@ void *handle_client(void *arg) {
             }
 
             if (join_room(room, password, cli) == 0) {
-                send(cli->sockfd, "ERROR", strlen("ERROR"), 0);
+                ssl_send(soft_error_msg, cli->sockfd);
                 break;
             } else {
-                send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
+                ssl_send(success_msg, cli->sockfd);
             }
 
             chat_history = get_messages(redis_context, room);
-            write(cli->sockfd, chat_history, strlen(chat_history));
+            ssl_send(chat_history, cli->sockfd); // write was used before(could cause error here)
             free(chat_history);
 
             memset(send_buffer, 0, sizeof(send_buffer));
@@ -265,7 +270,7 @@ void *handle_client(void *arg) {
 
         case SEND:
             if (room == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -277,7 +282,7 @@ void *handle_client(void *arg) {
 
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -286,7 +291,6 @@ void *handle_client(void *arg) {
                 pthread_detach(pthread_self());
                 return NULL;
             }
-            // TODO
             snprintf(send_buffer, sizeof(send_buffer), "[%s] %s\n",
                      cli->username, token);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
@@ -296,7 +300,7 @@ void *handle_client(void *arg) {
         case MAKE:
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -309,7 +313,7 @@ void *handle_client(void *arg) {
 
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
-                send(cli->sockfd, error_msg, strlen(error_msg), 0);
+                ssl_send(error_msg, cli->sockfd);
 
                 close(cli->sockfd);
                 remove_client(cli->uid, server);
@@ -320,9 +324,9 @@ void *handle_client(void *arg) {
             }
             strncpy(password, token, sizeof(password));
             if (create_room(redis_context, room_id, password) == NULL) {
-                send(cli->sockfd, "ERROR", strlen("ERROR"), 0);
+                ssl_send(soft_error_msg, cli->sockfd);
             } else {
-                send(cli->sockfd, "SUCCESS", strlen("SUCCESS"), 0);
+                ssl_send(success_msg, cli->sockfd);
             }
             break;
 
@@ -339,7 +343,7 @@ void *handle_client(void *arg) {
             memset(send_buffer, 0, sizeof(send_buffer));
             int count = reply->elements;
             if (count == 0) {
-                send(cli->sockfd, "EMPTY", strlen("EMPTY"), 0);
+                ssl_send(empty_msg, cli->sockfd);
                 break;
             }
             int current_len = 0;
@@ -356,7 +360,7 @@ void *handle_client(void *arg) {
 
             // the last delimiter is not needed
             send_buffer[current_len - 1] = '\0';
-            send(cli->sockfd, send_buffer, strlen(send_buffer), 0);
+            ssl_send(send_buffer, cli->sockfd);
         }
     }
 

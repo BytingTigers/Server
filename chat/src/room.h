@@ -26,7 +26,7 @@ int join_room(room_t *room, const char *password, client_t *client);
 int leave_room(room_t *room, client_t *client);
 
 int new_message(redisContext *redis_context, const room_t *room,
-                const char *msg);
+                const unsigned char *msg);
 
 char *get_messages(redisContext *redis_context, const room_t *room);
 

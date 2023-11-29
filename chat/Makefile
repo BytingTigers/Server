@@ -9,7 +9,7 @@ BUILD_DIR := build
 # Flags
 CFLAGS := -Wall -Wextra -I$(SRC_DIR)
 LDFLAGS := -pthread
-LIBS := -lhiredis -ljwt
+LIBS := -lhiredis -ljwt -lcrypto
 
 # Files
 SRCS := $(wildcard $(SRC_DIR)/*.c)

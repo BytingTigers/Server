@@ -14,6 +14,7 @@
 
 #define SECRET_KEY "OP0GVA1ABbK04hC46NkEYsBAykjUNe0dvf+COdW/YGI="
 #define SECRET_KEY_LEN 32
+#define AES_BLOCK_SIZE 16
 
 #define REDIS_HOST "localhost"
 #define REDIS_PORT 6379

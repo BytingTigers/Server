@@ -1,4 +1,5 @@
 #include "room.h"
+#include "ssl.h"
 #include <hiredis/hiredis.h>
 #include <hiredis/read.h>
 
@@ -150,7 +151,7 @@ int leave_room(room_t *room, client_t *client) {
 }
 
 int new_message(redisContext *redis_context, const room_t *room,
-                const char *msg) {
+                const unsigned char *msg) {
 
 
     redisReply *reply =
@@ -164,9 +165,7 @@ int new_message(redisContext *redis_context, const room_t *room,
 
     for (int i = 0; i < MAX_CLIENTS_PER_ROOM; i++) {
         if (room->clients[i] != NULL) {
-            if (write(room->clients[i]->sockfd, msg, strlen(msg)) < 0) {
-                return 1;
-            }
+            ssl_send(msg, room->clients[i]->sockfd);
         }
     }
 

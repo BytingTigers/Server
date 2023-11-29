@@ -2,11 +2,14 @@
 #define CLIENT_HANDLER_H
 
 #include "client.h"
+#include "define.h"
 #include "room.h"
 #include "verify_jwt.h"
 #include <hiredis/hiredis.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#define AES_BLOCK_SIZE 16
 
 typedef struct {
     client_t *client;

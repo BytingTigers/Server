@@ -404,7 +404,9 @@ void ssl_send(unsigned char *plaintext, int sockfd)
 
     EVP_CIPHER_CTX_free(ctx);
 
-    snprintf(buffer, sizeof(buffer), "%s%s", ciphertext, iv);
+    memset(buffer, 0, sizeof(buffer));
+    memcpy(buffer, ciphertext, ciphertext_len);
+    memcpy(buffer + 1024, iv, AES_BLOCK_SIZE);
     send(sockfd, buffer, sizeof(buffer), NULL);
 }
 
