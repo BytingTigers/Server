@@ -75,12 +75,10 @@ void remove_client(int uid, chat_server_t *server) {
 void *handle_client(void *arg) {
 
     unsigned char buffer[BUFFER_SIZE + 1];
-    int leave_flag = 0;
 
     thread_args_t *args = (thread_args_t *)arg;
     client_t *cli = args->client;
     chat_server_t *server = args->server;
-    redisContext *redis_context = args->redis_context;
 
     ssl_recv(buffer, cli->sockfd);
     if(buffer == NULL){
