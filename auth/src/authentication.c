@@ -5,7 +5,7 @@
 #include <mysql/mysql.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
-#include <openssl/aes.h>
+#include <openssl/evp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
