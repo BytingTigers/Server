@@ -8,6 +8,11 @@
 #define SECRET_KEY "OP0GVA1ABbK04hC46NkEYsBAykjUNe0dvf+COdW/YGI="
 #define SECRET_KEY_LEN 32
 
+// crypto
+#define AES_BLOCK_SIZE 16
+#include <openssl/aes.h>
+#include <openssl/rand.h>
+
 #define REDIS_HOST "localhost"
 #define REDIS_PORT 6379
 
@@ -33,4 +38,10 @@ const char *signin(const char *username, const char *password);
 char *generate_jwt(const char *username);
 
 int verify_jwt(const char *jwt_string, const char *username);
+
+void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+             unsigned char *iv, unsigned char *ciphertext);
+
+void decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+             unsigned char *iv, unsigned char *plaintext);
 #endif
