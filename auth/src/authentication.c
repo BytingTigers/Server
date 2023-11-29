@@ -216,7 +216,7 @@ const char *signin(const char *id, const char *password) {
     if (!id_s) {
         fprintf(stderr, "Sanitization for id failed.\n");
         mysql_close(conn);
-        return EXIT_FAILURE;
+        return NULL;
     }
     snprintf(query, sizeof(query), "SELECT salt FROM users WHERE username='%s'",
              id_s);
@@ -384,7 +384,7 @@ int verify_jwt(const char *jwt_string, const char *username) {
 
 void ssl_send(unsigned char *plaintext, int sockfd)
 {
-    int plaintext_len = strlen(plaintext), ciphertext_len = 0;
+    int plaintext_len = strlen((char*)plaintext), ciphertext_len = 0;
     unsigned char ciphertext[1024 + 16];
     unsigned char iv[AES_BLOCK_SIZE];
     RAND_bytes(iv, sizeof(iv));
