@@ -5,6 +5,7 @@
 #include <mysql/mysql.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
+#include <openssl/aes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -383,7 +384,7 @@ int verify_jwt(const char *jwt_string, const char *username) {
     return 1;
 }
 
-void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
              unsigned char *iv, unsigned char *ciphertext)
 {
     EVP_CIPHER_CTX *ctx;
@@ -400,9 +401,11 @@ void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
     ciphertext_len += len;
 
     EVP_CIPHER_CTX_free(ctx);
+
+    return ciphertext_len;
 }
 
-void decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
              unsigned char *iv, unsigned char *plaintext)
 {
     EVP_CIPHER_CTX *ctx;
@@ -419,4 +422,6 @@ void decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
     plaintext_len += len;
 
     EVP_CIPHER_CTX_free(ctx);
+
+    return plaintext_len;
 }

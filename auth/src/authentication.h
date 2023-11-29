@@ -10,8 +10,6 @@
 
 // crypto
 #define AES_BLOCK_SIZE 16
-#include <openssl/aes.h>
-#include <openssl/rand.h>
 
 #define REDIS_HOST "localhost"
 #define REDIS_PORT 6379
