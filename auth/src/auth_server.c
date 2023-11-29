@@ -73,7 +73,7 @@ void remove_client(int uid, chat_server_t *server) {
 
 void *handle_client(void *arg) {
 
-    char buffer[BUFFER_SIZE];
+    unsigned char buffer[BUFFER_SIZE + 1];
     int leave_flag = 0;
 
     thread_args_t *args = (thread_args_t *)arg;
@@ -81,11 +81,9 @@ void *handle_client(void *arg) {
     chat_server_t *server = args->server;
     redisContext *redis_context = args->redis_context;
 
-    int recv_len = recv(cli->sockfd, &buffer, sizeof(buffer), 0);
-
-    if (recv_len <= 0) {
+    ssl_recv(buffer, cli);
+    if(buffer == NULL)
         goto close_conn;
-    }
 
     char *token;
     char *rest = buffer;
@@ -98,7 +96,6 @@ void *handle_client(void *arg) {
     if (token != NULL) {
         mode = atoi(token);
     } else {
-        send(cli->sockfd, reply, sizeof(reply), NULL);
         goto close_conn;
     }
 
@@ -107,7 +104,6 @@ void *handle_client(void *arg) {
         strncpy(id, token, 30 - 1);
         id[30 - 1] = '\0';
     } else {
-        send(cli->sockfd, reply, sizeof(reply), NULL);
         goto close_conn;
     }
 
@@ -116,39 +112,37 @@ void *handle_client(void *arg) {
         strncpy(pw, token, 20 - 1);
         pw[20 - 1] = '\0';
     } else {
-        send(cli->sockfd, reply, sizeof(reply), NULL);
         goto close_conn;
     }
 
     switch (mode) {
     case 1:
-
         pthread_mutex_lock(&server->clients_mutex);
         if (signup(id, pw)) {
-            send(cli->sockfd, reply, sizeof(reply), NULL);
+            ssl_send(reply, cli);
         } else {
             const char success_reply[] = "SUCCESS";
-            send(cli->sockfd, success_reply, sizeof(success_reply), NULL);
+            ssl_send(success_reply, cli);
         }
         pthread_mutex_unlock(&server->clients_mutex);
 
         break;
 
     case 2:
-
         pthread_mutex_lock(&server->clients_mutex);
         const char *jwt = signin(id, pw);
         pthread_mutex_unlock(&server->clients_mutex);
         if (jwt == NULL) {
-            send(cli->sockfd, reply, sizeof(reply), NULL);
+            ssl_send(reply, cli);
         } else {
-            send(cli->sockfd, jwt, strlen(jwt) + 1, 0);
+            ssl_send(jwt, cli);
         }
 
         break;
     }
 
 close_conn:
+    ssl_send(reply, cli);
     close(cli->sockfd);
     remove_client(cli->uid, server);
     free(cli);

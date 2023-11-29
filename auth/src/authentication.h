@@ -37,9 +37,7 @@ char *generate_jwt(const char *username);
 
 int verify_jwt(const char *jwt_string, const char *username);
 
-void encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-             unsigned char *iv, unsigned char *ciphertext);
+void ssl_send(unsigned char *plaintext, int sockfd);
 
-void decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-             unsigned char *iv, unsigned char *plaintext);
+void ssl_recv(unsigned char *plaintext, int sockfd);
 #endif

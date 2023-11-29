@@ -384,15 +384,18 @@ int verify_jwt(const char *jwt_string, const char *username) {
     return 1;
 }
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-             unsigned char *iv, unsigned char *ciphertext)
+void ssl_send(unsigned char *plaintext, int sockfd)
 {
+    int plaintext_len = strlen(plaintext), ciphertext_len = 0;
+    unsigned char ciphertext[1024 + 16];
+    unsigned char iv[AES_BLOCK_SIZE];
+    RAND_bytes(iv, sizeof(iv));
+
     EVP_CIPHER_CTX *ctx;
     int len;
-    int ciphertext_len;
 
     ctx = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, SECRET_KEY, iv);
 
     EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len);
     ciphertext_len = len;
@@ -402,18 +405,32 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 
     EVP_CIPHER_CTX_free(ctx);
 
-    return ciphertext_len;
+    send(sockfd, ciphertext, sizeof(ciphertext), NULL);
 }
 
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-             unsigned char *iv, unsigned char *plaintext)
+void ssl_recv(unsigned char *plaintext, int sockfd)
 {
+    unsigned char iv[AES_BLOCK_SIZE];
+    unsigned char buffer[1024 + AES_BLOCK_SIZE + AES_BLOCK_SIZE]; // ciphertext + padding + iv
+    unsigned char ciphertext[1024 + AES_BLOCK_SIZE];
+
+    int ciphertext_len = 0, plaintext_len = 0;
+    int recv_len = recv(sockfd, buffer, sizeof(buffer), 0);
+
+    if(recv_len < 0){
+        plaintext = NULL;
+        return;
+    }
+    ciphertext_len = recv_len - AES_BLOCK_SIZE;
+
+    memcpy(iv, buffer + 1024 + 16, AES_BLOCK_SIZE);
+    memcpy(ciphertext, buffer, 1024 + 16);
+
     EVP_CIPHER_CTX *ctx;
     int len;
-    int plaintext_len;
 
     ctx = EVP_CIPHER_CTX_new();
-    EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, SECRET_KEY, iv);
 
     EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len);
     plaintext_len = len;
@@ -422,6 +439,5 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
     plaintext_len += len;
 
     EVP_CIPHER_CTX_free(ctx);
-
-    return plaintext_len;
+    plaintext[plaintext_len] = '\0';
 }
