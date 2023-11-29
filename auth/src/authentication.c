@@ -385,7 +385,8 @@ int verify_jwt(const char *jwt_string, const char *username) {
 void ssl_send(unsigned char *plaintext, int sockfd)
 {
     int plaintext_len = strlen((char*)plaintext), ciphertext_len = 0;
-    unsigned char ciphertext[1024 + 16];
+    unsigned char buffer[1024 + AES_BLOCK_SIZE + AES_BLOCK_SIZE]; // ciphertext + padding + iv
+    unsigned char ciphertext[1024 + AES_BLOCK_SIZE];
     unsigned char iv[AES_BLOCK_SIZE];
     RAND_bytes(iv, sizeof(iv));
 
@@ -403,7 +404,8 @@ void ssl_send(unsigned char *plaintext, int sockfd)
 
     EVP_CIPHER_CTX_free(ctx);
 
-    send(sockfd, ciphertext, sizeof(ciphertext), NULL);
+    snprintf(buffer, sizeof(buffer), "%s%s", ciphertext, iv);
+    send(sockfd, buffer, sizeof(buffer), NULL);
 }
 
 void ssl_recv(unsigned char *plaintext, int sockfd)
