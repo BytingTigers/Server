@@ -182,8 +182,6 @@ int signup(const char *username, const char *password) {
         return EXIT_FAILURE;
     }
 
-close_conn:
-
     free(salt);
     free(password_hash);
     free(hex_salt);
