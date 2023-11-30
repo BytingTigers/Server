@@ -10,6 +10,7 @@
 
 // crypto
 #define AES_BLOCK_SIZE 16
+#define BUFFER_SIZE 4096
 
 #define REDIS_HOST "localhost"
 #define REDIS_PORT 6379
