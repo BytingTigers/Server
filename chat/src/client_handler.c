@@ -252,13 +252,7 @@ void *handle_client(void *arg) {
 
             memset(send_buffer, 0, sizeof(send_buffer));
 
-            snprintf(send_buffer, BUFF_LEN, cli->username);
-            send_buffer[sizeof(send_buffer) - 1] = '\0';
-
-            new_message(redis_context, room, send_buffer);
-
-            snprintf(send_buffer, BUFF_LEN, " joined the room!\n",
-                     cli->username);
+            snprintf(send_buffer, BUFF_LEN, "%s joined the room!\n", cli->username);
             send_buffer[sizeof(send_buffer) - 1] = '\0';
             new_message(redis_context, room, send_buffer);
             break;
