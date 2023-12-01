@@ -188,6 +188,11 @@ char *get_messages(redisContext *redis_context, const room_t *room) {
         return NULL;
     }
 
+    if(reply->elements == 0){
+        freeReplyObject(reply);
+        return NULL;
+    }
+    
     for (int i = reply->elements - 1; i >= 0; i--) {
         const char *line = reply->element[i]->str;
         strncat(res, line, BUFF_LEN - (count + 1));

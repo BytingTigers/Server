@@ -245,8 +245,10 @@ void *handle_client(void *arg) {
             }
 
             chat_history = get_messages(redis_context, room);
-            ssl_send(chat_history, cli->sockfd); // write was used before(could cause error here)
-            free(chat_history);
+            if(chat_history){
+                ssl_send(chat_history, cli->sockfd); // write was used before(could cause error here)
+                free(chat_history); 
+            }
 
             memset(send_buffer, 0, sizeof(send_buffer));
 
@@ -279,6 +281,7 @@ void *handle_client(void *arg) {
                 pthread_detach(pthread_self());
                 return NULL;
             }
+            printf("[SEND] %s\n",rest);
 
             token = strtok_r(NULL, delim, &rest);
             if (token == NULL) {
