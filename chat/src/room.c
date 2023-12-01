@@ -92,7 +92,7 @@ room_t *create_room(redisContext *redis_context, const char *id,
         }
     }
 
-    if (create_room_index == -1) {
+    if (create_room_index == MAX_ROOMS_PER_SERVER) {
         return NULL;
     }
 
