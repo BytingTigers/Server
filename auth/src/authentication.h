@@ -20,7 +20,7 @@
 #define DB_PASS ""
 #define DB_NAME "auth"
 #define DB_PORT 3306
-#define MAX_USERNAME_LEN 20
+#define MAX_USERNAME_LEN 30
 #define QUERY_LEN 512
 
 char *hex_to_string(unsigned char *data, size_t dataLength);
