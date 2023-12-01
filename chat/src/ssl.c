@@ -8,9 +8,10 @@
 void ssl_send(unsigned char *plaintext, int sockfd)
 {
     int plaintext_len = strlen((char*)plaintext), ciphertext_len = 0;
-    unsigned char buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE]; // ciphertext + padding + iv
+    unsigned char buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE + 2]; // ciphertext + padding + iv + length
     unsigned char ciphertext[BUFF_LEN + AES_BLOCK_SIZE];
     unsigned char iv[AES_BLOCK_SIZE];
+    unsigned char length_byte[2];
     RAND_bytes(iv, sizeof(iv));
 
     EVP_CIPHER_CTX *ctx;
@@ -27,20 +28,23 @@ void ssl_send(unsigned char *plaintext, int sockfd)
 
     EVP_CIPHER_CTX_free(ctx);
     
+    length_byte[0] = (ciphertext_len >> 8) & 0xff;
+    length_byte[1] = ciphertext_len & 0xff;
+
     memset(buffer, 0, sizeof(buffer));
     memcpy(buffer, ciphertext, ciphertext_len);
     memcpy(buffer + BUFF_LEN + AES_BLOCK_SIZE, iv, AES_BLOCK_SIZE);
-
+    memcpy(buffer + BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE, length_byte, 2);
     send(sockfd, buffer, sizeof(buffer), NULL);
-    printf("[CHAT]sending: %s\n", plaintext);
 }
 
 void ssl_recv(unsigned char *plaintext, int sockfd)
 {
     unsigned char iv[AES_BLOCK_SIZE];
     unsigned char plaintext_buffer[BUFF_LEN];
-    unsigned char buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE]; // ciphertext + padding + iv
+    unsigned char buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE + 2]; // ciphertext + padding + iv + length
     unsigned char ciphertext[BUFF_LEN + AES_BLOCK_SIZE];
+    unsigned char length_byte[2];
 
     int ciphertext_len = 0, plaintext_len = 0;
     int recv_len = recv(sockfd, buffer, sizeof(buffer), 0);
@@ -49,18 +53,11 @@ void ssl_recv(unsigned char *plaintext, int sockfd)
         plaintext = NULL;
         return;
     }
-    ciphertext_len = recv_len - AES_BLOCK_SIZE;
+
+    ciphertext_len = (buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE] << 8) + buffer[BUFF_LEN + AES_BLOCK_SIZE + AES_BLOCK_SIZE + 1];
 
     memcpy(iv, buffer + BUFF_LEN + AES_BLOCK_SIZE, AES_BLOCK_SIZE);
     memcpy(ciphertext, buffer, BUFF_LEN + AES_BLOCK_SIZE);
-
-    // remove following null bytes
-    for(int i=0;i<ciphertext_len;i++){
-        if(ciphertext[i] == 0){
-            ciphertext_len = i;
-            break;
-        }
-    }
 
     EVP_CIPHER_CTX *ctx;
     int len;
@@ -78,6 +75,6 @@ void ssl_recv(unsigned char *plaintext, int sockfd)
     plaintext_buffer[plaintext_len] = '\0';
     
     memset(plaintext, 0, sizeof(plaintext));
-    memcpy(plaintext, plaintext_buffer, strlen((char*)plaintext_buffer));
-    printf("[CHAT]received: %s\n", plaintext);
+    memcpy(plaintext, plaintext_buffer, plaintext_len);
+    plaintext[plaintext_len] = '\0';
 }
