@@ -49,7 +49,7 @@ void ssl_recv(unsigned char *plaintext, int sockfd)
     int ciphertext_len = 0, plaintext_len = 0;
     int recv_len = recv(sockfd, buffer, sizeof(buffer), 0);
 
-    if(recv_len < 0){
+    if(recv_len <= 0){
         plaintext = NULL;
         return;
     }
